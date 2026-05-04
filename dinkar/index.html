@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Logistic Data Manager | Plot & Edit</title>
+    <!-- Chart.js for simple, beautiful graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        /* cards */
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.8rem;
+            transition: 0.2s;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin: 0 0 0.2rem 0;
+            color: #1e4663;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sub {
+            color: #4a627a;
+            margin-top: -5px;
+            margin-bottom: 20px;
+            border-left: 3px solid #3b82f6;
+            padding-left: 15px;
+        }
+        .flex-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #eef2f6;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        .btn-blue {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .btn-blue:hover { background: #2563eb; transform: translateY(-1px);}
+        .btn-outline {
+            background: white;
+            border: 1px solid #cbd5e1;
+        }
+        .btn-outline:hover { background: #f8fafc; border-color: #3b82f6;}
+        .btn-red {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .btn-red:hover { background: #fecaca; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e4663;
+        }
+        input, select {
+            padding: 8px 10px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.85rem;
+            width: 100%;
+            background: white;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+        .stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 8px 18px;
+            flex: 1;
+            min-width: 110px;
+            text-align: center;
+            border: 1px solid #e2edf2;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #5b7c99;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e4663;
+            line-height: 1.2;
+        }
+        .coeff-panel {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 12px 20px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .badge {
+            background: #dbeafe;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .chart-container {
+            max-height: 400px;
+            margin-top: 10px;
+        }
+        canvas { max-height: 360px; width: 100%; }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+        }
+        small { color: #5f7d9c; }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin: 20px 0;
+            color: #6c8eaa;
+        }
+        @media (max-width: 700px) {
+            .card { padding: 1rem; }
+            th, td { padding: 8px 4px; }
+            button { padding: 6px 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>📈 Logistic Regression Data Manager <span style="font-size: 0.9rem; background:#eef2ff; padding:2px 10px; border-radius:40px;">easy + graph</span></h1>
+        <div class="sub">Manage binary classification dataset (X₁, X₂, Y=0/1) • Real-time logistic boundary & scatter plot</div>
+        <div class="flex-bar">
+            <div style="display: flex; gap: 10px;">
+                <button id="addBtn" class="btn-blue">➕ Add Row</button>
+                <button id="resetBtn" class="btn-outline">⟳ Load Sample</button>
+                <button id="clearBtn" class="btn-red">🗑 Clear All</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="exportBtn" class="btn-outline">📎 Export CSV</button>
+                <label for="csvUpload" class="btn-outline" style="cursor:pointer;">📂 Upload CSV</label>
+                <input type="file" id="csvUpload" accept=".csv" style="display:none">
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="card">
+        <div class="stats" id="statsArea">
+            <div class="stat-box"><div class="stat-label">Total Samples</div><div class="stat-number" id="totalN">0</div></div>
+            <div class="stat-box"><div class="stat-label">Class 0 (Y=0)</div><div class="stat-number" id="class0">0</div></div>
+            <div class="stat-box"><div class="stat-label">Class 1 (Y=1)</div><div class="stat-number" id="class1">0</div></div>
+            <div class="stat-box"><div class="stat-label">Balance (1/0)</div><div class="stat-number" id="balance">—</div></div>
+        </div>
+    </div>
+
+    <!-- Editable Data Table -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <strong>✏️ Data Editor (click any cell to modify)</strong>
+            <span class="badge">X₁ , X₂ continuous &nbsp;|&nbsp; Y ∈ {0,1}</span>
+        </div>
+        <div class="table-wrapper">
+            <table id="data-table">
+                <thead>
+                    <tr><th>#</th><th>Feature X₁</th><th>Feature X₂</th><th>Target Y</th><th style="width:60px">Action</th></tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="5" style="text-align:center;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <small>💡 Tip: Edit numbers — the graph & logistic coefficients update automatically.</small>
+    </div>
+
+    <!-- Graph + Logistic Decision Boundary -->
+    <div class="card">
+        <h3 style="margin:0 0 8px 0;">📊 Feature Space & Logistic Boundary</h3>
+        <p style="font-size:0.8rem; margin:0 0 12px 0;">🔵 Blue = Y=0 &nbsp;&nbsp;🔴 Red = Y=1 &nbsp;&nbsp; ➖ Dashed line = learned logistic regression separator (P=0.5)</p>
+        <div class="chart-container">
+            <canvas id="scatterCanvas" width="800" height="400" style="width:100%; height:auto; max-height:400px"></canvas>
+        </div>
+    </div>
+
+    <!-- Coefficients preview -->
+    <div class="card">
+        <h3 style="margin:0 0 8px 0;">🧠 Trained Logistic Model (Gradient Descent)</h3>
+        <div class="coeff-panel">
+            <div><span class="badge">β₀ (Intercept)</span> <strong id="coef0">—</strong></div>
+            <div><span class="badge">β₁ (X₁ coeff)</span> <strong id="coef1">—</strong></div>
+            <div><span class="badge">β₂ (X₂ coeff)</span> <strong id="coef2">—</strong></div>
+            <div><span class="badge">Decision threshold</span> 0.5</div>
+        </div>
+        <div style="margin-top: 12px; font-size:0.8rem; background:#eef2ff; padding: 10px; border-radius: 18px;">
+            📐 Logistic function: P(Y=1) = 1 / (1 + exp(-(β₀ + β₁·X₁ + β₂·X₂)))
+        </div>
+    </div>
+    <footer>Easy logistic data manager — add / edit rows, upload CSV, see decision boundary + coefficients in real time.</footer>
+</div>
+
+<script>
+    // ---------- DATA STORE ----------
+    let dataset = [];  // each: { x1, x2, y }
+
+    // Default interesting dataset (two interleaved clusters)
+    function getSampleData() {
+        return [
+            { x1: 1.0, x2: 2.2, y: 0 }, { x1: 1.3, x2: 1.9, y: 0 }, { x1: 0.7, x2: 2.8, y: 0 },
+            { x1: 1.9, x2: 1.5, y: 0 }, { x1: 1.4, x2: 2.5, y: 0 }, { x1: 2.1, x2: 1.0, y: 0 },
+            { x1: 3.2, x2: 2.4, y: 1 }, { x1: 3.6, x2: 1.7, y: 1 }, { x1: 3.9, x2: 2.9, y: 1 },
+            { x1: 2.8, x2: 3.1, y: 1 }, { x1: 3.3, x2: 2.2, y: 1 }, { x1: 4.1, x2: 1.8, y: 1 },
+            { x1: 2.3, x2: 2.0, y: 0 }, { x1: 3.0, x2: 1.4, y: 1 }
+        ];
+    }
+
+    // ---------- LOGISTIC REGRESSION MODEL (simple gradient descent) ----------
+    class SimpleLogistic {
+        constructor() {
+            this.b0 = 0.0;
+            this.b1 = 0.0;
+            this.b2 = 0.0;
+        }
+        sigmoid(z) {
+            // clamp for numerical safety
+            const x = Math.min(30, Math.max(-30, z));
+            return 1 / (1 + Math.exp(-x));
+        }
+        predictProb(x1, x2) {
+            return this.sigmoid(this.b0 + this.b1 * x1 + this.b2 * x2);
+        }
+        // Fit using mini-batch style (simple batch GD)
+        fit(data, lr = 0.2, epochs = 1000) {
+            if (data.length === 0) {
+                this.b0 = 0; this.b1 = 0; this.b2 = 0;
+                return;
+            }
+            let b0 = this.b0, b1 = this.b1, b2 = this.b2;
+            const n = data.length;
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                let grad0 = 0, grad1 = 0, grad2 = 0;
+                for (let i = 0; i < n; i++) {
+                    const x1 = data[i].x1;
+                    const x2 = data[i].x2;
+                    const y = data[i].y;
+                    const z = b0 + b1 * x1 + b2 * x2;
+                    const pred = this.sigmoid(z);
+                    const error = pred - y;  // derivative of log loss
+                    grad0 += error;
+                    grad1 += error * x1;
+                    grad2 += error * x2;
+                }
+                const step = lr / n;
+                b0 -= step * grad0;
+                b1 -= step * grad1;
+                b2 -= step * grad2;
+            }
+            this.b0 = b0; this.b1 = b1; this.b2 = b2;
+        }
+        // Get decision boundary points for line plotting (x2 = m*x1 + c)
+        getBoundaryLine(xMin, xMax) {
+            if (Math.abs(this.b2) < 1e-8) {
+                // if b2 is near zero, boundary is vertical: b0 + b1*x1 = 0
+                if (Math.abs(this.b1) > 1e-8) {
+                    const x0 = -this.b0 / this.b1;
+                    if (isFinite(x0)) return { vertical: true, x: x0 };
+                }
+                return null;
+            }
+            const slope = -this.b1 / this.b2;
+            const intercept = -this.b0 / this.b2;
+            return { vertical: false, slope: slope, intercept: intercept };
+        }
+    }
+
+    let model = new SimpleLogistic();
+
+    // UI references
+    const tbody = document.getElementById('table-body');
+    let chart = null; // chart.js instance
+
+    // Helper: update all UI
+    function refreshEverything() {
+        renderTable();
+        updateStats();
+        trainModelAndShowCoeffs();
+        drawScatterPlot();
+    }
+
+    // render data table with inline editing
+    function renderTable() {
+        if (!dataset.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">✨ No data points. Click "Add Row" or "Load Sample" ✨</td></tr>';
+            return;
+        }
+        let html = '';
+        dataset.forEach((row, idx) => {
+            html += `<tr>
+                <td>${idx+1}</td>
+                <td><input type="number" step="any" value="${row.x1}" class="edit-input" data-idx="${idx}" data-field="x1"></td>
+                <td><input type="number" step="any" value="${row.x2}" class="edit-input" data-idx="${idx}" data-field="x2"></td>
+                <td>
+                    <select class="edit-select" data-idx="${idx}" data-field="y">
+                        <option value="0" ${row.y === 0 ? 'selected' : ''}>0 (negative)</option>
+                        <option value="1" ${row.y === 1 ? 'selected' : ''}>1 (positive)</option>
+                    </select>
+                </td>
+                <td><button class="delete-row-btn" data-idx="${idx}" style="background:#fee2e2; border:none; border-radius:30px; padding:5px 12px; cursor:pointer;">✖</button></td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+
+        // attach event listeners dynamically
+        document.querySelectorAll('.edit-input').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const idx = parseInt(inp.dataset.idx);
+                const field = inp.dataset.field;
+                let val = parseFloat(inp.value);
+                if (isNaN(val)) val = 0;
+                if (field === 'x1') dataset[idx].x1 = val;
+                if (field === 'x2') dataset[idx].x2 = val;
+                refreshEverything();
+            });
+        });
+        document.querySelectorAll('.edit-select').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const idx = parseInt(sel.dataset.idx);
+                const newY = parseInt(sel.value);
+                if (!isNaN(newY) && (newY === 0 || newY === 1)) dataset[idx].y = newY;
+                refreshEverything();
+            });
+        });
+        document.querySelectorAll('.delete-row-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.idx);
+                dataset.splice(idx, 1);
+                refreshEverything();
+            });
+        });
+    }
+
+    function updateStats() {
+        const total = dataset.length;
+        let c0 = 0, c1 = 0;
+        dataset.forEach(d => d.y === 0 ? c0++ : c1++);
+        document.getElementById('totalN').innerText = total;
+        document.getElementById('class0').innerText = c0;
+        document.getElementById('class1').innerText = c1;
+        let balanceTxt = total === 0 || c0 === 0 ? '—' : (c1 / c0).toFixed(2);
+        document.getElementById('balance').innerText = total === 0 ? '—' : balanceTxt;
+    }
+
+    function trainModelAndShowCoeffs() {
+        if (dataset.length === 0) {
+            document.getElementById('coef0').innerText = '—';
+            document.getElementById('coef1').innerText = '—';
+            document.getElementById('coef2').innerText = '—';
+            return;
+        }
+        model.fit(dataset, 0.15, 1200);
+        document.getElementById('coef0').innerText = model.b0.toFixed(4);
+        document.getElementById('coef1').innerText = model.b1.toFixed(4);
+        document.getElementById('coef2').innerText = model.b2.toFixed(4);
+    }
+
+    // draw chart with dataset and decision boundary
+    function drawScatterPlot() {
+        const canvas = document.getElementById('scatterCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (chart) {
+            chart.destroy();
+        }
+        if (dataset.length === 0) {
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets: [] },
+                options: { plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: () => 'No data' } } } }
+            });
+            return;
+        }
+
+        // separate points by class
+        const class0points = dataset.filter(p => p.y === 0).map(p => ({ x: p.x1, y: p.x2 }));
+        const class1points = dataset.filter(p => p.y === 1).map(p => ({ x: p.x1, y: p.x2 }));
+
+        let datasets = [
+            { label: 'Class 0 (Y=0)', data: class0points, backgroundColor: '#3b82f6', borderColor: '#1e40af', pointRadius: 6, pointHoverRadius: 8, type: 'scatter', order: 2 },
+            { label: 'Class 1 (Y=1)', data: class1points, backgroundColor: '#ef4444', borderColor: '#b91c1c', pointRadius: 6, pointHoverRadius: 8, type: 'scatter', order: 2 }
+        ];
+
+        // ---- decision boundary line ----
+        if (dataset.length >= 2) {
+            const xs = dataset.map(p => p.x1);
+            const xMin = Math.min(...xs, 0) - 0.8;
+            const xMax = Math.max(...xs, 5) + 0.8;
+            const boundary = model.getBoundaryLine(xMin, xMax);
+            if (boundary) {
+                if (boundary.vertical) {
+                    const xVal = boundary.x;
+                    if (isFinite(xVal) && xVal >= xMin - 1 && xVal <= xMax + 1) {
+                        // vertical line: we can add a line dataset with two points
+                        const yMin = Math.min(...dataset.map(p => p.x2), -1) - 1;
+                        const yMax = Math.max(...dataset.map(p => p.x2), 5) + 1;
+                        datasets.push({
+                            label: 'Decision Boundary (P=0.5)',
+                            data: [{ x: xVal, y: yMin }, { x: xVal, y: yMax }],
+                            type: 'line',
+                            borderColor: '#2c3e50',
+                            borderWidth: 2.5,
+                            borderDash: [6, 6],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0,
+                            order: 1,
+                            showLine: true
+                        });
+                    }
+                } else {
+                    const slope = boundary.slope;
+                    const intercept = boundary.intercept;
+                    if (isFinite(slope) && isFinite(intercept)) {
+                        const x1_start = xMin;
+                        const x1_end = xMax;
+                        const y1_start = slope * x1_start + intercept;
+                        const y1_end = slope * x1_end + intercept;
+                        if (isFinite(y1_start) && isFinite(y1_end)) {
+                            datasets.push({
+                                label: 'Logistic Boundary (P=0.5)',
+                                data: [{ x: x1_start, y: y1_start }, { x: x1_end, y: y1_end }],
+                                type: 'line',
+                                borderColor: '#1e293b',
+                                borderWidth: 2.5,
+                                borderDash: [6, 8],
+                                pointRadius: 0,
+                                fill: false,
+                                order: 1,
+                                showLine: true
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        const config = {
+            type: 'scatter',
+            data: { datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { title: { display: true, text: 'Feature X₁', font: { weight: 'bold' } }, beginAtZero: false },
+                    y: { title: { display: true, text: 'Feature X₂', font: { weight: 'bold' } } }
+                },
+                plugins: {
+                    tooltip: { callbacks: { label: (ctx) => `(${ctx.raw.x}, ${ctx.raw.y})` } },
+                    legend: { position: 'top' }
+                }
+            }
+        };
+        chart = new Chart(ctx, config);
+    }
+
+    // ---------- CRUD operations ----------
+    function addRow() {
+        dataset.push({ x1: 2.5, x2: 2.0, y: 0 });
+        refreshEverything();
+    }
+
+    function clearAll() {
+        if (dataset.length > 0 && confirm('⚠️ Delete all data points?')) {
+            dataset = [];
+            refreshEverything();
+        } else if (dataset.length === 0) {
+            dataset = [];
+            refreshEverything();
+        }
+    }
+
+    function loadSample() {
+        dataset = getSampleData();
+        refreshEverything();
+    }
+
+    // CSV Export
+    function exportCSV() {
+        if (dataset.length === 0) {
+            alert('No data to export');
+            return;
+        }
+        let csvRows = [['x1', 'x2', 'y']];
+        for (let row of dataset) {
+            csvRows.push([row.x1, row.x2, row.y]);
+        }
+        const csvContent = csvRows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `logistic_data_${new Date().toISOString().slice(0,19)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Upload CSV handler
+    function uploadCSV(file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const text = ev.target.result;
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) { alert('Invalid CSV: need header + data'); return; }
+            const newData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === "") continue;
+                const parts = line.split(',').map(s => s.trim());
+                if (parts.length < 3) continue;
+                const x1 = parseFloat(parts[0]);
+                const x2 = parseFloat(parts[1]);
+                const y = parseInt(parts[2], 10);
+                if (!isNaN(x1) && !isNaN(x2) && (y === 0 || y === 1)) {
+                    newData.push({ x1, x2, y });
+                }
+            }
+            if (newData.length === 0) { alert('No valid rows found. Format: x1,x2,y (0/1)'); return; }
+            dataset = newData;
+            refreshEverything();
+        };
+        reader.readAsText(file);
+    }
+
+    // attach global handlers
+    document.getElementById('addBtn').addEventListener('click', addRow);
+    document.getElementById('resetBtn').addEventListener('click', loadSample);
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+    document.getElementById('exportBtn').addEventListener('click', exportCSV);
+    const fileInput = document.getElementById('csvUpload');
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) uploadCSV(e.target.files[0]);
+        fileInput.value = '';
+    });
+
+    // initialize with sample data
+    dataset = getSampleData();
+    refreshEverything();
+</script>
+</body>
+</html>
